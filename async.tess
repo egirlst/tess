@@ -1,0 +1,32 @@
+$$ Pseudo-async example using cooperative steps and sys.sleep
+
+cls Task {
+    f! tick <<
+        print:: name + " tick " + i
+        return:: i + 1
+    >>
+}
+
+f! main {
+    $$ Interleave two tasks A and B
+    ta = new Task()
+    tb = new Task()
+    a = 0
+    b = 0
+    max = 5
+    
+    while ( (a < max) + (b < max) ) {
+        if (a < max) {
+            a = ta.tick("A", a)
+            sys.sleep(200)
+        }
+        if (b < max) {
+            b = tb.tick("B", b)
+            sys.sleep(200)
+        }
+    }
+    
+    print:: "Done"
+}
+
+start >.<

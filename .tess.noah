@@ -1,0 +1,15 @@
+# Example Tess manifest
+# Lines are key = value; comments start with # or $
+
+name = Tess Demo
+version = 0.1.0
+description = Example project manifest for Tess
+author = sa1nt
+license = MIT
+
+# Dependencies: comma or space separated
+dependencies = saint, micheal
+
+# You can also split as dep1/dep2/etc. The installer reads keys starting with 'dep'
+dep1 = saint
+dep2 = micheal

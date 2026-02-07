@@ -1,0 +1,18 @@
+f! main {
+    print:: "Allocating..."
+    ptr = mem.alloc(10)
+    print:: "Pointer value:"
+    print:: ptr
+    print:: "Type check..."
+    
+    if ptr == null {
+        print:: "PTR IS NULL"
+    } else {
+        mem.set(ptr, 0, 123)
+        val = mem.get(ptr, 0)
+        print:: "Read back: " + val
+        mem.free(ptr)
+    }
+}
+
+start >.<

@@ -1,0 +1,4 @@
+f! main {
+    print:: "Hello"
+}
+start >main<

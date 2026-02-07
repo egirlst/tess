@@ -1,0 +1,8 @@
+f! main {
+    test_data = "Hello World"
+    write_file("test.txt", test_data)
+    print:: "File written"
+}
+
+start >.<
+

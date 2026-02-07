@@ -1,0 +1,5 @@
+f! main { 
+     url = "https://tess.sh/rep.json" 
+     response = h.req:: "GET" url 
+     return:: response
+}

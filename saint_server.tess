@@ -1,0 +1,27 @@
+$$ Saint HTTP server example using the SAINT lib
+
+$$ Import the saint module
+add saint
+
+$$ Simple text handler
+f! hello(req, res) {
+    res.text("Hello from Saint")
+    return:: "ok"
+}
+
+$$ Simple JSON handler (string payload for demo)
+f! status(req, res) {
+    res.json("{\"status\":\"ok\"}")
+    return:: "ok"
+}
+
+f! main {
+    $$ Start server on port 8080, expose = true
+    print:: start_server(8080, true)
+    
+    $$ Register routes
+    print:: route("/", hello, "GET")
+    print:: route("/status", status, "GET")
+}
+
+start >.<

@@ -1,0 +1,23 @@
+f! main {
+    print:: "=== Tess Language with HTTP Support ==="
+    
+    $$ Math calculations
+    result1 = 15 + 27
+    print:: "15 + 27 = "
+    print:: result1
+    
+    $$ HTTP Request - Native implementation, no libcurl needed!
+    print:: "\nMaking HTTPS request (native WinHTTP, no libcurl)..."
+    response = request:: "GET" "https://httpbin.org/get"
+    print:: "\nHTTP Response:"
+    print:: response
+    
+    print:: "\n=== Complete ==="
+    
+    $$ Access timing information via timing() function (debug)
+    $$ Only print if user wants it - timing() returns dict with compile_time, execute_time, total_time
+    $$ Example: timing_info = timing()
+    $$          print:: timing_info["compile_time"]
+}
+
+start >.<
