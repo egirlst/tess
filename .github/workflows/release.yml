@@ -1,0 +1,108 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup MinGW
+        uses: egor-tensin/setup-mingw@v2
+        with:
+          platform: x64
+
+      - name: Add WiX to PATH
+        run: echo "C:\Program Files (x86)\WiX Toolset v3.11\bin" >> $GITHUB_PATH
+        shell: bash
+
+      - name: Build MSI
+        run: installers\windows\build_msi.bat
+        shell: cmd
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: windows-installer
+          path: installers/windows/TessInstaller.msi
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build PKG
+        run: |
+          chmod +x installers/macos/build_pkg.sh
+          ./installers/macos/build_pkg.sh
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: macos-installer
+          path: installers/macos/TessInstaller.pkg
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev
+
+      - name: Build Tarball
+        run: |
+          chmod +x installers/unix/package.sh
+          ./installers/unix/package.sh
+
+      - name: Build Deb
+        run: |
+          chmod +x installers/linux/build_deb.sh
+          ./installers/linux/build_deb.sh
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-packages
+          path: |
+            dist/*.tar.gz
+            installers/linux/build_deb/*.deb
+
+  release:
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: windows-installer
+          path: artifacts/windows
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: macos-installer
+          path: artifacts/macos
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: linux-packages
+          path: artifacts/linux
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/windows/TessInstaller.msi
+            artifacts/macos/TessInstaller.pkg
+            artifacts/linux/*.tar.gz
+            artifacts/linux/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

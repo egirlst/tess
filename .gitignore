@@ -1,3 +1,13 @@
-/installers
+# Binaries and Objects
 /bin
 /build
+
+# Installer Artifacts
+installers/*.msi
+installers/*.wixobj
+installers/*.wixpdb
+installers/*.pkg
+installers/linux/build_deb/
+installers/macos/build_macos/
+installers/macos/payload/
+dist/

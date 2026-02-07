@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Product Id="*" Name="Tess Language" Language="1033" Version="1.0.0.0" Manufacturer="Tess Project" UpgradeCode="a6b9c8d7-e5f4-3210-9876-543210abcdef">
+        <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+
+        <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+        <MediaTemplate EmbedCab="yes" />
+
+        <Feature Id="ProductFeature" Title="Tess Language" Level="1">
+            <ComponentGroupRef Id="ProductComponents" />
+        </Feature>
+    </Product>
+
+    <Fragment>
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="ProgramFilesFolder">
+                <Directory Id="INSTALLFOLDER" Name="Tess" />
+            </Directory>
+        </Directory>
+    </Fragment>
+
+    <Fragment>
+        <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+            <Component Id="TessExecutable" Guid="b7c0d9e8-f6a5-4321-0987-6543210fedcb">
+                <File Id="TessEXE" Source="..\..\bin\tess.exe" KeyPath="yes" />
+            </Component>
+            <Component Id="TsExecutable" Guid="c8d1e0f9-07b6-5432-1098-76543210fedc">
+                <File Id="TsEXE" Source="..\..\bin\ts.exe" KeyPath="yes" />
+            </Component>
+            <Component Id="PathEnv" Guid="d9e2f10a-18c7-6543-2109-876543210fed">
+                <CreateFolder />
+                <Environment Id="PATH" Name="PATH" Value="[INSTALLFOLDER]" Permanent="no" Part="last" Action="set" System="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>
