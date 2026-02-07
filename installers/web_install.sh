@@ -5,7 +5,7 @@
 
 set -e
 
-REPO_URL="https://github.com/tess-lang/tess.git"
+REPO_URL="https://github.com/egirlst/tess.git"
 TEMP_DIR=$(mktemp -d)
 
 echo "Tess Language Installer"
