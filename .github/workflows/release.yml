@@ -47,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: macos-installer
-          path: installers/macos/TessInstaller.pkg
+          path: TessInstaller.pkg
 
   build-linux:
     runs-on: ubuntu-latest
@@ -75,7 +75,7 @@ jobs:
           name: linux-packages
           path: |
             dist/*.tar.gz
-            installers/linux/build_deb/*.deb
+            build_deb/*.deb
 
   release:
     needs: [build-windows, build-macos, build-linux]
@@ -102,7 +102,7 @@ jobs:
           files: |
             artifacts/windows/TessInstaller.msi
             artifacts/macos/TessInstaller.pkg
-            artifacts/linux/*.tar.gz
-            artifacts/linux/*.deb
+            artifacts/linux/dist/*.tar.gz
+            artifacts/linux/build_deb/*.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
