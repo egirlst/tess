@@ -18,6 +18,10 @@
 - GCC Compiler
 - Make
 
+## Installation
+
+You can download the latest pre-built binaries for Windows, macOS, and Linux from the [Releases Page](https://github.com/egirlst/tess/releases/).
+
 ### Building from Source
 
 To build Tess from source, run the following command in the root directory:
