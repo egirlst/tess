@@ -21,6 +21,7 @@
 ## Installation
 
 You can download the latest pre-built binaries for Windows, macOS, and Linux from the [Releases Page](https://github.com/egirlst/tess/releases/).
+or go to https://tess.sh/install 
 
 ### Building from Source
 

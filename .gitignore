@@ -1,6 +1,7 @@
 # Binaries and Objects
 /bin
 /build
+/vs
 
 # Installer Artifacts
 installers/*.msi
