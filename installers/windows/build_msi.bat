@@ -10,6 +10,19 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+REM Check for binaries
+if not exist "..\..\bin\tess.exe" (
+    echo Binaries not found. Attempting to build...
+    pushd ..\..
+    mingw32-make
+    if %errorlevel% neq 0 (
+        echo Build failed. Please ensure gcc and mingw32-make are in your PATH.
+        popd
+        exit /b 1
+    )
+    popd
+)
+
 REM Compile
 echo Compiling Product.wxs...
 candle Product.wxs -out Product.wixobj

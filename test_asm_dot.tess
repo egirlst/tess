@@ -1,4 +1,0 @@
-f! main {
-    print:: "Hello from main"
-}
-start >.<

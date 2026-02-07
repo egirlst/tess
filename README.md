@@ -1,67 +1,91 @@
-# Tess Language
+# Tess Programming Language
 
-The programming language that connects the web with the system.
+**Tess** is a versatile programming language compiler and interpreter designed for efficiency and ease of use. It comes with a robust set of built-in tools for package management, code formatting, linting, and testing.
 
-- Native HTTP built-in, no extra libraries
-- Direct file and memory control when needed
-- Clean, expressive syntax
+## Features
 
-## Quick Start
+- **Compiler & Interpreter**: Run scripts directly or build them for distribution.
+- **Package Management**: Built-in package manager to install, update, and remove dependencies.
+- **Developer Tooling**: Includes a formatter (`fmt`), linter (`lint`), and test runner (`test`) out of the box.
+- **Interactive Shell**: a REPL for quick experimentation.
+- **Virtual Environments**: Manage isolated environments with `venv`.
+- **Project Scaffolding**: Quickly start new projects with `new`.
+- **Lenient syntax model**: Tess intentionally avoids strict syntax and formatting rules. Bracket placement and code style are not enforced, provided all logic is correctly scoped within << >> or { } blocks per function or class.
+## Build & Installation
 
-- Run a file: `tess run main.tess` (alias: `ts run main.tess`)
-- Start a project: `tess new myproj` then `tess run main.tess`
-- Interactive shell: `tess repl`
+### Prerequisites
 
-## Example 1 — Hello
+- GCC Compiler
+- Make
 
-```tess
-$$ Minimal hello program
-f! main {
-    print:: "Hello"
-}
+### Building from Source
 
-start >.<
+To build Tess from source, run the following command in the root directory:
+
+```bash
+make
 ```
 
-## Example 2 — Web Request
+This will compile the source code and generate the binaries in the `bin/` directory:
+- `bin/tess` (Main executable)
+- `bin/ts` (Alias)
 
-```tess
-$$ Built-in HTTP GET
-f! main {
-    response = request:: "GET" "https://httpbin.org/get"
-    print:: response
-}
+## Usage
 
-start >.<
+You can use either `tess` or the short alias `ts` to run commands.
+
+### Running Code
+
+```bash
+# Run a script
+tess run script.tess
+
+# Run inline code
+tess exec "print('Hello, World!')"
+
+# Start the REPL
+tess repl
 ```
 
-## Example 3 — File I/O + Memory
+### Project Management
 
-```tess
-$$ Write and read a file, then free memory
-f! main {
-    $$ Allocate memory
-    ptr = mem.alloc(128)
+```bash
+# Create a new project
+tess new my_project
 
-    $$ Write to a file
-    file = f.open("example.txt", "w")
-    file.write("Tess writes files easily")
-    file.close()
-
-    $$ Read the file back
-    file = f.open("example.txt", "r")
-    content = file.read()
-    file.close()
-    print:: content
-
-    $$ Free memory
-    mem.free(ptr)
-}
-
-start >.<
+# Build a project
+tess build main.tess
 ```
 
-## Notes
+### Package Management
 
-- Comments use `$$` at the start of a line.
-- Entry point is `f! main { ... }` followed by `start >.<`.
+```bash
+# Install a package
+tess install package_name
+
+# Install dependencies from .tess.noah (local config)
+tess i .
+
+# Uninstall a package
+tess uninstall package_name
+```
+
+### Development Tools
+
+```bash
+# Format code
+tess fmt file.tess
+
+# Lint code
+tess lint file.tess
+
+# Check syntax
+tess check file.tess
+
+# Run tests
+tess test
+```
+
+## License
+
+[Add License Information Here]

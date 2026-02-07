@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -g
-INCLUDES = -Iinclude
-SRCDIR = src
+INCLUDES = -Icompiler/include
+SRCDIR = compiler
 OBJDIR = build
 BINDIR = bin
 
