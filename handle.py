@@ -139,7 +139,7 @@ async def main():
 
         # 5. Insert Installers
         # Windows (MSI)
-        await insert_installer(conn, sub_change_id, "windows", "TessInstaller.msi", "https://github.com/sa1nt/tess/releases/download/v1.0.0/TessInstaller.msi")
+        await insert_installer(conn, sub_change_id, "windows", "tess-v1.0.0-installer.msi", "https://github.com/sa1nt/tess/releases/download/v1.0.0/tess-v1.0.0-installer.msi")
         
         # macOS (PKG)
         await insert_installer(conn, sub_change_id, "macos", "TessInstaller.pkg", "https://github.com/sa1nt/tess/releases/download/v1.0.0/TessInstaller.pkg")
