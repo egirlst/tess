@@ -77,8 +77,26 @@ jobs:
             dist/*.tar.gz
             build_deb/*.deb
 
+  build-extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: npm install -g @vscode/vsce
+      - name: Package Extension
+        run: |
+          cd vscode-extension
+          vsce package
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: vscode-extension
+          path: vscode-extension/*.vsix
+
   release:
-    needs: [build-windows, build-macos, build-linux]
+    needs: [build-windows, build-macos, build-linux, build-extension]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v3
@@ -96,6 +114,11 @@ jobs:
           name: linux-packages
           path: artifacts/linux
 
+      - uses: actions/download-artifact@v3
+        with:
+          name: vscode-extension
+          path: artifacts/extension
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -104,5 +127,6 @@ jobs:
             artifacts/macos/TessInstaller.pkg
             artifacts/linux/dist/*.tar.gz
             artifacts/linux/build_deb/*.deb
+            artifacts/extension/*.vsix
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

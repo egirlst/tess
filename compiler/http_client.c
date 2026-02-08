@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Use libcurl if defined */
 #ifdef USE_LIBCURL
 #include <curl/curl.h>
 
@@ -18,7 +17,6 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
 
     char *ptr = realloc(mem->memory, mem->size + realsize + 1);
     if (!ptr) {
-        /* out of memory! */
         printf("not enough memory (realloc returned NULL)\n");
         return 0;
     }
@@ -36,7 +34,7 @@ static char* http_request_libcurl(const char *method, const char *url, const cha
     CURLcode res;
     struct MemoryStruct chunk;
 
-    chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
+    chunk.memory = malloc(1);
     chunk.size = 0;
 
     curl_global_init(CURL_GLOBAL_ALL);
@@ -95,7 +93,6 @@ static char* http_request_libcurl(const char *method, const char *url, const cha
 #endif
 
 #ifdef _WIN32
-/* Windows: Use WinHTTP (built into Windows, no external dependencies) */
 #include <windows.h>
 #include <winhttp.h>
 #ifdef _MSC_VER
@@ -112,7 +109,6 @@ static char* http_request_win32(const char *method, const char *url, const char 
     DWORD dwStatusCode = 0;
     DWORD dwStatusCodeSize = sizeof(DWORD);
     
-    /* Parse URL */
     char hostname[256] = {0};
     char path[2048] = {0};
     INTERNET_PORT port = INTERNET_DEFAULT_HTTP_PORT;
@@ -126,7 +122,6 @@ static char* http_request_win32(const char *method, const char *url, const char 
         url += 7;
     }
     
-    /* Extract hostname and path */
     const char *path_start = strchr(url, '/');
     if (path_start) {
         size_t host_len = path_start - url;
@@ -140,14 +135,12 @@ static char* http_request_win32(const char *method, const char *url, const char 
         path[1] = '\0';
     }
     
-    /* Check for port in hostname */
     char *colon = strchr(hostname, ':');
     if (colon) {
         *colon = '\0';
         port = (INTERNET_PORT)atoi(colon + 1);
     }
     
-    /* Initialize WinHTTP */
     wchar_t wUserAgent[] = L"Tess Language HTTP Client/1.0";
     wchar_t wHostname[256];
     wchar_t wPath[2048];
@@ -164,7 +157,6 @@ static char* http_request_win32(const char *method, const char *url, const char 
         return error;
     }
     
-    /* Connect to server */
     hConnect = WinHttpConnect(hSession, wHostname, port, 0);
     if (!hConnect) {
         WinHttpCloseHandle(hSession);
@@ -173,7 +165,6 @@ static char* http_request_win32(const char *method, const char *url, const char 
         return error;
     }
     
-    /* Create request */
     hRequest = WinHttpOpenRequest(hConnect, wMethod, wPath, NULL, NULL, NULL,
                                    is_https ? WINHTTP_FLAG_SECURE : 0);
     if (!hRequest) {
@@ -184,7 +175,6 @@ static char* http_request_win32(const char *method, const char *url, const char 
         return error;
     }
     
-    /* Add custom headers if provided */
     if (headers && header_count > 0) {
         wchar_t wHeaders[4096] = {0};
         for (int i = 0; i < header_count; i++) {
@@ -196,11 +186,9 @@ static char* http_request_win32(const char *method, const char *url, const char 
         WinHttpAddRequestHeaders(hRequest, wHeaders, -1, WINHTTP_ADDREQ_FLAG_ADD);
     }
     
-    /* Send request */
     LPVOID request_data = NULL;
     DWORD data_len = 0;
     if (data && (strcmp(method, "POST") == 0 || strcmp(method, "PUT") == 0)) {
-        /* Send data as UTF-8 bytes, not wide chars */
         request_data = (LPVOID)data;
         data_len = (DWORD)strlen(data);
     }
@@ -214,7 +202,6 @@ static char* http_request_win32(const char *method, const char *url, const char 
         return error;
     }
     
-    /* Wait for response */
     if (!WinHttpReceiveResponse(hRequest, NULL)) {
         WinHttpCloseHandle(hRequest);
         WinHttpCloseHandle(hConnect);
@@ -224,11 +211,9 @@ static char* http_request_win32(const char *method, const char *url, const char 
         return error;
     }
     
-    /* Get status code */
     WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
                        NULL, &dwStatusCode, &dwStatusCodeSize, NULL);
     
-    /* Read response data */
     size_t response_size = 0;
     size_t response_capacity = 4096;
     response = malloc(response_capacity);
@@ -249,7 +234,6 @@ static char* http_request_win32(const char *method, const char *url, const char 
         
         if (dwSize == 0) break;
         
-        /* Ensure we have enough space */
         if (response_size + dwSize + 1 > response_capacity) {
             response_capacity = (response_size + dwSize) * 2;
             char *new_response = realloc(response, response_capacity);
@@ -275,7 +259,6 @@ static char* http_request_win32(const char *method, const char *url, const char 
     
     response[response_size] = '\0';
     
-    /* Cleanup */
     WinHttpCloseHandle(hRequest);
     WinHttpCloseHandle(hConnect);
     WinHttpCloseHandle(hSession);
@@ -284,7 +267,6 @@ static char* http_request_win32(const char *method, const char *url, const char 
 }
 
 #else
-/* Linux/macOS: Native socket-based HTTP client */
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -300,7 +282,6 @@ static char* http_request_unix(const char *method, const char *url, const char *
     int port = 80;
     int is_https = 0;
     
-    /* Parse URL */
     if (strncmp(url, "https://", 8) == 0) {
         is_https = 1;
         port = 443;
@@ -309,7 +290,6 @@ static char* http_request_unix(const char *method, const char *url, const char *
         url += 7;
     }
     
-    /* Extract hostname and path */
     const char *path_start = strchr(url, '/');
     if (path_start) {
         size_t host_len = path_start - url;
@@ -323,7 +303,6 @@ static char* http_request_unix(const char *method, const char *url, const char *
         path[1] = '\0';
     }
     
-    /* Check for port in hostname */
     char *colon = strchr(hostname, ':');
     if (colon) {
         *colon = '\0';
@@ -331,13 +310,11 @@ static char* http_request_unix(const char *method, const char *url, const char *
     }
     
     if (is_https) {
-        /* HTTPS not implemented in basic socket version - return error */
         char *error = malloc(256);
         snprintf(error, 256, "HTTP Error: HTTPS not supported in native implementation. Use http:// URLs or install libcurl for HTTPS support.");
         return error;
     }
     
-    /* Resolve hostname */
     struct hostent *server = gethostbyname(hostname);
     if (!server) {
         char *error = malloc(256);
@@ -345,7 +322,6 @@ static char* http_request_unix(const char *method, const char *url, const char *
         return error;
     }
     
-    /* Create socket */
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
         char *error = malloc(256);
@@ -353,7 +329,6 @@ static char* http_request_unix(const char *method, const char *url, const char *
         return error;
     }
     
-    /* Connect to server */
     struct sockaddr_in serv_addr;
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
@@ -367,7 +342,6 @@ static char* http_request_unix(const char *method, const char *url, const char *
         return error;
     }
     
-    /* Build HTTP request */
     char request[8192];
     int req_len = snprintf(request, sizeof(request),
         "%s %s HTTP/1.1\r\n"
@@ -376,7 +350,6 @@ static char* http_request_unix(const char *method, const char *url, const char *
         "Connection: close\r\n",
         method, path, hostname);
     
-    /* Add custom headers */
     if (headers && header_count > 0) {
         for (int i = 0; i < header_count && req_len < (int)sizeof(request) - 100; i++) {
             int added = snprintf(request + req_len, sizeof(request) - req_len, "%s\r\n", headers[i]);
@@ -384,16 +357,13 @@ static char* http_request_unix(const char *method, const char *url, const char *
         }
     }
     
-    /* Add Content-Length for POST/PUT */
     if (data && (strcmp(method, "POST") == 0 || strcmp(method, "PUT") == 0)) {
         req_len += snprintf(request + req_len, sizeof(request) - req_len,
                            "Content-Length: %zu\r\n", strlen(data));
     }
     
-    /* End headers */
     req_len += snprintf(request + req_len, sizeof(request) - req_len, "\r\n");
     
-    /* Add body if present */
     if (data && (strcmp(method, "POST") == 0 || strcmp(method, "PUT") == 0)) {
         int data_len = strlen(data);
         if (req_len + data_len < (int)sizeof(request)) {
@@ -402,7 +372,6 @@ static char* http_request_unix(const char *method, const char *url, const char *
         }
     }
     
-    /* Send request */
     if (send(sockfd, request, req_len, 0) < 0) {
         close(sockfd);
         char *error = malloc(256);
@@ -410,7 +379,6 @@ static char* http_request_unix(const char *method, const char *url, const char *
         return error;
     }
     
-    /* Read response */
     size_t response_size = 0;
     size_t response_capacity = 4096;
     response = malloc(response_capacity);
@@ -431,16 +399,13 @@ static char* http_request_unix(const char *method, const char *url, const char *
         buffer[n] = '\0';
         
         if (!headers_done) {
-            /* Find end of headers */
             char *header_end = strstr(buffer, "\r\n\r\n");
             if (header_end) {
                 headers_done = 1;
-                /* Extract Content-Length if present */
                 char *cl_header = strstr(buffer, "Content-Length:");
                 if (cl_header) {
                     content_length = atoi(cl_header + 15);
                 }
-                /* Skip to body */
                 char *body_start = header_end + 4;
                 int body_len = n - (body_start - buffer);
                 if (body_len > 0) {
@@ -461,7 +426,6 @@ static char* http_request_unix(const char *method, const char *url, const char *
                 }
             }
         } else {
-            /* Reading body */
             if (response_size + n + 1 > response_capacity) {
                 response_capacity = (response_size + n) * 2;
                 char *new_response = realloc(response, response_capacity);
@@ -477,7 +441,6 @@ static char* http_request_unix(const char *method, const char *url, const char *
             memcpy(response + response_size, buffer, n);
             response_size += n;
             
-            /* Stop if we got all content */
             if (content_length > 0 && (int)response_size >= content_length) {
                 break;
             }
@@ -491,7 +454,6 @@ static char* http_request_unix(const char *method, const char *url, const char *
 }
 #endif
 
-/* Main HTTP request function - uses native implementation */
 char* http_request(const char *method, const char *url, const char *data, const char **headers, int header_count) {
 #ifdef USE_LIBCURL
     return http_request_libcurl(method, url, data, headers, header_count);

@@ -12,3 +12,7 @@ installers/linux/build_deb/
 installers/macos/build_macos/
 installers/macos/payload/
 dist/
+
+# VS Code Extension
+*.vsix
+vscode-extension/node_modules/

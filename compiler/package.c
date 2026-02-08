@@ -30,7 +30,6 @@ static int ensure_package_dir(void) {
 
 int tess_install(const char *package) {
     if (strcmp(package, ".") == 0) {
-        /* Install dependencies from .tess.noah (like npm install) */
         ConfigMap noah = {0};
         if (config_load_file(".tess.noah", &noah)) {
             const char *name = config_get(&noah, "name");
@@ -44,17 +43,14 @@ int tess_install(const char *package) {
                 printf("\n");
             }
             
-            /* Install dependencies */
             int deps_installed = 0;
             for (size_t i = 0; i < noah.count; i++) {
                 if (strcmp(noah.entries[i].key, "dependencies") == 0 ||
                     strncmp(noah.entries[i].key, "dep", 3) == 0) {
-                    /* Parse dependencies (comma-separated or space-separated) */
                     char *deps = strdup(noah.entries[i].value);
                     char *dep = strtok(deps, ", ");
                     while (dep) {
                         printf("Installing dependency: %s\n", dep);
-                        /* Install to local .tess_packages directory */
                         if (repository_download(dep, NULL) == 0) {
                             deps_installed++;
                         } else {
@@ -80,14 +76,12 @@ int tess_install(const char *package) {
         }
     }
     
-    /* Install specific package to local project */
     if (!ensure_package_dir()) {
         return 1;
     }
     
     printf("Installing package '%s' to project...\n", package);
     
-    /* Try to download from repository to local .tess_packages */
     if (repository_download(package, NULL) == 0) {
         printf("Package '%s' installed to project!\n", package);
         return 0;
@@ -108,4 +102,3 @@ int tess_update(const char *package) {
     printf("(Package update not yet implemented)\n");
     return 0;
 }
-

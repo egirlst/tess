@@ -1,0 +1,76 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Tess",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#functions"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.tess",
+          "match": "#.*$"
+        },
+        {
+          "name": "comment.line.double-dollar.tess",
+          "match": "\\$\\$.*$"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.tess",
+          "match": "\\b(if|else|while|repeat|for|break|continue|ret|cls|new|try|catch|start)\\b"
+        },
+        {
+          "name": "support.function.builtin.tess",
+          "match": "\\b(print::|request::|http::|get|add)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.tess",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.tess",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "numbers": {
+      "name": "constant.numeric.tess",
+      "match": "\\b\\d+(\\.\\d+)?\\b"
+    },
+    "operators": {
+      "name": "keyword.operator.tess",
+      "match": "\\+|\\-|\\*|/|%|<<|<=|<|>>|>=|>|==|=|!=|!"
+    },
+    "functions": {
+        "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\!",
+        "captures": {
+            "1": { "name": "entity.name.function.tess" }
+        }
+    }
+  },
+  "scopeName": "source.tess"
+}

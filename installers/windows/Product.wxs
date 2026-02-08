@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <Product Id="*" Name="Tess Language" Language="1033" Version="1.0.0.0" Manufacturer="Tess Project" UpgradeCode="a6b9c8d7-e5f4-3210-9876-543210abcdef">
+    <Product Id="*" Name="Tess Installer" Language="1033" Version="1.0.0.0" Manufacturer="Tess Project" UpgradeCode="a6b9c8d7-e5f4-3210-9876-543210abcdef">
         <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
 
         <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
         <MediaTemplate EmbedCab="yes" />
 
-        <Feature Id="ProductFeature" Title="Tess Language" Level="1">
-            <ComponentGroupRef Id="ProductComponents" />
+        <!-- Use a Feature Tree UI to allow selection -->
+        <UIRef Id="WixUI_FeatureTree" />
+        <WixVariable Id="WixUILicenseRtf" Value="installers/windows/license.rtf" />
+
+        <Feature Id="CoreFeature" Title="Tess Core" Level="1" Absent="disallow" Description="Installs the main Tess interpreter (tess.exe) and adds it to PATH.">
+            <ComponentRef Id="TessExecutable" />
+            <ComponentRef Id="PathEnv" />
+        </Feature>
+
+        <Feature Id="AliasFeature" Title="ts Alias" Level="1" Description="Installs the 'ts' shorthand alias for tess.">
+            <ComponentRef Id="TsExecutable" />
         </Feature>
     </Product>
 
@@ -20,7 +29,7 @@
     </Fragment>
 
     <Fragment>
-        <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+        <DirectoryRef Id="INSTALLFOLDER">
             <Component Id="TessExecutable" Guid="b7c0d9e8-f6a5-4321-0987-6543210fedcb">
                 <File Id="TessEXE" Source="..\..\bin\tess.exe" KeyPath="yes" />
             </Component>
@@ -31,6 +40,6 @@
                 <CreateFolder />
                 <Environment Id="PATH" Name="PATH" Value="[INSTALLFOLDER]" Permanent="no" Part="last" Action="set" System="yes" />
             </Component>
-        </ComponentGroup>
+        </DirectoryRef>
     </Fragment>
 </Wix>

@@ -7,7 +7,7 @@
 int config_load_file(const char *filename, ConfigMap *config) {
     FILE *file = fopen(filename, "r");
     if (!file) {
-        return 0; /* File doesn't exist, that's okay */
+        return 0;
     }
 
     char line[1024];
@@ -16,26 +16,22 @@ int config_load_file(const char *filename, ConfigMap *config) {
     config->entries = malloc(sizeof(ConfigEntry) * config->capacity);
 
     while (fgets(line, sizeof(line), file)) {
-        /* Remove newline */
         size_t len = strlen(line);
         if (len > 0 && line[len - 1] == '\n') {
             line[len - 1] = '\0';
             len--;
         }
 
-        /* Skip empty lines and comments */
         if (len == 0 || line[0] == '#' || line[0] == '$') {
             continue;
         }
 
-        /* Parse key = value */
         char *equals = strchr(line, '=');
         if (equals) {
             *equals = '\0';
             char *key = line;
             char *value = equals + 1;
 
-            /* Trim whitespace */
             while (isspace(*key)) key++;
             while (isspace(*value)) value++;
             
@@ -51,7 +47,6 @@ int config_load_file(const char *filename, ConfigMap *config) {
                 value_end--;
             }
 
-            /* Remove quotes if present */
             if (value[0] == '"' && value[strlen(value) - 1] == '"') {
                 value[strlen(value) - 1] = '\0';
                 value++;
@@ -92,4 +87,3 @@ void config_destroy(ConfigMap *config) {
         config->capacity = 0;
     }
 }
-

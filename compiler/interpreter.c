@@ -9,8 +9,6 @@
 #include "builtins.h"
 #include "http_client.h"
 
-/* Error tracking */
-/* static int error_occurred = 0; */
 static char *error_message = NULL;
 
 Interpreter* interpreter_create(void) {
@@ -24,8 +22,7 @@ Interpreter* interpreter_create(void) {
     interpreter->error_occurred = 0;
     memset(interpreter->error_message, 0, sizeof(interpreter->error_message));
     
-    /* Initialize builtins */
-    interpreter_push_scope(interpreter); /* Global scope */
+    interpreter_push_scope(interpreter);
     register_builtins(interpreter);
     
     return interpreter;
@@ -37,13 +34,8 @@ void interpreter_destroy(Interpreter *interpreter) {
             for (size_t i = 0; i < interpreter->scope_count; i++) {
                 for (size_t j = 0; j < interpreter->scopes[i].count; j++) {
                     free(interpreter->scopes[i].variables[j].name);
-                    /* Don't free values yet as they might be shared */
-                    /* TODO: Implement proper memory management/GC */
                 }
-                /* Free variable array for this scope */
                 if (interpreter->scopes[i].variables) {
-                    /* free(interpreter->scopes[i].variables); */
-                    /* Temporarily commented out to avoid double free issues during development */
                     free(interpreter->scopes[i].variables);
                 }
             }
@@ -73,22 +65,17 @@ void interpreter_pop_scope(Interpreter *interpreter) {
         Scope *scope = &interpreter->scopes[interpreter->scope_count];
         for (size_t i = 0; i < scope->count; i++) {
             free(scope->variables[i].name);
-            /* Value freeing would happen here */
         }
         if (scope->variables) {
-            /* free(scope->variables); */
-            /* Temporarily commented out */
             free(scope->variables);
         }
     }
 }
 
 void interpreter_set_variable(Interpreter *interpreter, const char *name, Value value) {
-    /* Look in current scope first */
     if (interpreter->scope_count > 0) {
         Scope *scope = &interpreter->scopes[interpreter->scope_count - 1];
         
-        /* Check if variable exists */
         for (size_t i = 0; i < scope->count; i++) {
             if (strcmp(scope->variables[i].name, name) == 0) {
                 scope->variables[i].value = value;
@@ -96,7 +83,6 @@ void interpreter_set_variable(Interpreter *interpreter, const char *name, Value 
             }
         }
         
-        /* Add new variable */
         if (scope->count >= scope->capacity) {
             size_t new_capacity = scope->capacity == 0 ? 4 : scope->capacity * 2;
             scope->variables = realloc(scope->variables,
@@ -111,7 +97,6 @@ void interpreter_set_variable(Interpreter *interpreter, const char *name, Value 
 }
 
 Value interpreter_get_variable(Interpreter *interpreter, const char *name) {
-    /* Look from current scope down to global scope */
     for (int i = interpreter->scope_count - 1; i >= 0; i--) {
         Scope *scope = &interpreter->scopes[i];
         for (size_t j = 0; j < scope->count; j++) {
@@ -121,7 +106,6 @@ Value interpreter_get_variable(Interpreter *interpreter, const char *name) {
         }
     }
     
-    /* Not found */
     Value val = {VALUE_NULL, {0}};
     return val;
 }
@@ -132,7 +116,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
         return val;
     }
     
-    /* Check for error state */
     if (interpreter->error_occurred && node->type != AST_CATCH) {
         return (Value){VALUE_NULL, {0}};
     }
@@ -182,7 +165,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
                 return result;
             }
             
-            /* String concatenation */
             if (strcmp(node->value, "+") == 0) {
                 char *left_str = NULL;
                 char *right_str = NULL;
@@ -268,7 +250,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
             Value result = {VALUE_NULL, {0}};
             while (stmt) {
                 result = interpreter_eval(interpreter, stmt);
-                /* Check for return */
                 Value ret_check = interpreter_get_variable(interpreter, "__return__");
                 if (ret_check.type == VALUE_NUMBER && ret_check.as.number == 1) {
                     result = interpreter_get_variable(interpreter, "__return_value__");
@@ -350,11 +331,9 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
             
         case AST_RETURN: {
             Value ret_val = interpreter_eval(interpreter, node->left);
-            /* Mark return in current scope and all parent scopes up to function boundary */
-            /* Set in current scope */
             Value return_wrapper;
             return_wrapper.type = VALUE_NUMBER;
-            return_wrapper.as.number = 1; /* Marker */
+            return_wrapper.as.number = 1;
             interpreter_set_variable(interpreter, "__return__", return_wrapper);
             interpreter_set_variable(interpreter, "__return_value__", ret_val);
             return ret_val;
@@ -369,7 +348,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
             
             if (interpreter->error_occurred) {
                 interpreter->error_occurred = 0;
-                /* Bind error message to 'error' variable if needed, for now just run catch */
                 interpreter_push_scope(interpreter);
                 if (error_message) {
                     Value err_val;
@@ -387,12 +365,10 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
         }
         
         case AST_NEW: {
-            /* Instantiate class */
             char *class_name = node->value;
             Value class_val = interpreter_get_variable(interpreter, class_name);
             
             if (class_val.type == VALUE_CLASS) {
-                /* Create object (Dict) */
                 Value obj;
                 obj.type = VALUE_OBJECT;
                 obj.as.dict = malloc(sizeof(Dict));
@@ -401,7 +377,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
                 instance->buckets = calloc(instance->bucket_count, sizeof(DictEntry*));
                 instance->count = 0;
                 
-                /* Copy methods from class to object */
                 ASTNode *class_def = class_val.as.class_def;
                 ASTNode *member = class_def->children;
                 while (member) {
@@ -410,8 +385,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
                         method_val.type = VALUE_FUNCTION;
                         method_val.as.function = member;
                         
-                        /* Add to object dict */
-                        /* Simple hash */
                         unsigned long hash = 5381;
                         int c;
                         char *str = member->value;
@@ -464,10 +437,8 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
             dict->buckets = calloc(dict->bucket_count, sizeof(DictEntry*));
             dict->count = 0;
             
-            ASTNode *pair = node->children; /* Pairs are stored as children? Or structure differently? */
+            ASTNode *pair = node->children;
             (void)pair;
-            /* TODO: Fix AST_DICT construction in parser to allow iteration */
-            /* Assuming pairs are processed sequentially */
             return dict_val;
         }
         
@@ -495,7 +466,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
                     return v;
                 }
             } else if (collection.type == VALUE_DICT && index.type == VALUE_STRING) {
-                /* Dict lookup */
                 Dict *dict = collection.as.dict;
                 char *key = index.as.string;
                 unsigned long hash = 5381;
@@ -511,7 +481,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
                     }
                     entry = entry->next;
                 }
-                /* Return null if not found */
             }
             break;
         }
@@ -521,7 +490,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
             char *member_name = node->right->value;
             
             if (obj.type == VALUE_FILE) {
-                /* Handle native file object methods */
                 BuiltinFunc func = NULL;
                 if (strcmp(member_name, "write") == 0) func = (BuiltinFunc)stdlib_file_write;
                 else if (strcmp(member_name, "read") == 0) func = (BuiltinFunc)stdlib_file_read;
@@ -529,10 +497,9 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
                 
                 if (func) {
                     Value args[16];
-                    args[0] = obj; /* Pass 'this' as first argument */
+                    args[0] = obj;
                     int argc = 1;
                     
-                    /* Collect arguments if it's a call */
                     if (node->children || (node->value && strcmp(node->value, "call") == 0)) {
                         ASTNode *arg_node = node->children;
                         while (arg_node && argc < 16) {
@@ -546,7 +513,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
             }
 
             if (obj.type == VALUE_OBJECT) {
-                /* Look up member in object dict */
                 Dict *dict = obj.as.dict;
                 unsigned long hash = 5381;
                 int c;
@@ -557,29 +523,16 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
                 DictEntry *entry = dict->buckets[bucket_idx];
                 while (entry) {
                     if (strcmp(entry->key, member_name) == 0) {
-                        /* Found member */
                         Value val = *entry->value;
                         
-                        /* If it's a function call (checked by parser structure or node type?), execute it */
-                        /* Check for children (args) OR explicit "call" marker from parser */
                         if (node->children || (node->value && strcmp(node->value, "call") == 0)) { 
                              if (val.type == VALUE_FUNCTION) {
-                                /* Call method */
-                                /* TODO: Pass 'this' context */
-                                /* For now, just call it like a function */
-                                
-                                /* Create AST_FUNCTION_CALL-like node to reuse logic? 
-                                   Or just call interpreter_call_function logic here? */
-                                   
-                                /* Let's manually execute similar to call_function */
                                 ASTNode *func_node = val.as.function;
                                 
                                 if (!func_node) {
-                                    /* Builtin function */
                                     BuiltinFunc builtin = get_builtin(member_name);
                                     if (builtin) {
                                         Value args[16];
-                                        /* Pass 'this' as first argument */
                                         args[0] = obj;
                                         int argc = 1;
                                         
@@ -593,7 +546,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
                                     return (Value){VALUE_NULL, {0}};
                                 }
 
-                                /* Evaluate arguments */
                                 Value args[16];
                                 int argc = 0;
                                 ASTNode *arg_node = node->children;
@@ -604,7 +556,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
                                 
                                 interpreter_push_scope(interpreter);
                                 
-                                /* Bind arguments */
                                 ASTNode *param = func_node->left;
                                 int arg_idx = 0;
                                 while (param && arg_idx < argc) {
@@ -615,7 +566,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
                                     arg_idx++;
                                 }
                                 
-                                /* Execute body */
                                 ASTNode *body = func_node->children;
                                 Value res = {VALUE_NULL, {0}};
                                 
@@ -623,11 +573,9 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
                                     ASTNode *stmt = body->children;
                                     while (stmt) {
                                         res = interpreter_eval(interpreter, stmt);
-                                        /* Check for return in current scope */
                                         Value ret_check = interpreter_get_variable(interpreter, "__return__");
                                         if (ret_check.type == VALUE_NUMBER && ret_check.as.number == 1) {
                                             res = interpreter_get_variable(interpreter, "__return_value__");
-                                            /* Clear return flag */
                                             interpreter_set_variable(interpreter, "__return__", (Value){VALUE_NULL, {0}});
                                             interpreter_pop_scope(interpreter);
                                             return res;
@@ -637,7 +585,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
                                     }
                                 } else if (body) {
                                     res = interpreter_eval(interpreter, body);
-                                    /* Check for return */
                                     Value ret_check = interpreter_get_variable(interpreter, "__return__");
                                     if (ret_check.type == VALUE_NUMBER && ret_check.as.number == 1) {
                                         res = interpreter_get_variable(interpreter, "__return_value__");
@@ -688,7 +635,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
                 return error_val;
             }
             
-            /* Evaluate method and URL (they might be variables or string literals) */
             Value method_val = interpreter_eval(interpreter, node->left);
             Value url_val = interpreter_eval(interpreter, node->right);
             
@@ -696,7 +642,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
                 Value error_val;
                 error_val.type = VALUE_STRING;
                 error_val.as.string = strdup("HTTP Error: Method and URL must be strings");
-                /* Clean up if needed */
                 if (method_val.type == VALUE_STRING) free(method_val.as.string);
                 if (url_val.type == VALUE_STRING) free(url_val.as.string);
                 return error_val;
@@ -708,13 +653,11 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
             const char **headers = NULL;
             int header_count = 0;
             
-            /* Check for optional data (third argument) */
             if (node->children) {
                 Value data_val = interpreter_eval(interpreter, node->children);
                 if (data_val.type == VALUE_STRING) {
                     data = data_val.as.string;
                     
-                    /* Auto-add Content-Type header for POST/PUT with data */
                     if (strcmp(method, "POST") == 0 || strcmp(method, "PUT") == 0) {
                         headers = malloc(sizeof(char*) * 1);
                         headers[0] = "Content-Type: application/json";
@@ -725,7 +668,6 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
                 }
             }
             
-            /* Use cross-platform HTTP client */
             char *response = http_request(method, url, data, headers, header_count);
             
             if (!response) {
@@ -741,9 +683,8 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
             
             Value result;
             result.type = VALUE_STRING;
-            result.as.string = response; /* Takes ownership */
+            result.as.string = response;
             
-            /* Free method/url/data strings (they were allocated during evaluation) */
             free(method_val.as.string);
             free(url_val.as.string);
             if (data) free(data);
@@ -753,19 +694,14 @@ Value interpreter_eval(Interpreter *interpreter, ASTNode *node) {
         }
 
         case AST_START: {
-             /* Look for main function and call it */
-             /* AST_START node itself doesn't do much, the parser generates MAIN_CALL */
-             /* But if we have explicit start node, we can ensure things are set up */
              break;
         }
         
         case AST_IMPORT: {
-            /* Load and execute module */
             if (node->value) {
                 ASTNode *module_ast = module_load(node->value);
                 if (module_ast) {
                     module_execute(interpreter, module_ast);
-                    /* Module variables are now in scope */
                 }
             }
             break;
@@ -783,7 +719,6 @@ Value interpreter_call_function(Interpreter *interpreter, ASTNode *node) {
     char *func_name = strdup("main");
     
     if (node->type == AST_FUNCTION_CALL && node->value) {
-        /* Extract function name from >name< format */
         if (strlen(node->value) > 2 && node->value[0] == '>' && node->value[strlen(node->value)-1] == '<') {
             size_t len = strlen(node->value) - 2;
             free(func_name);
@@ -795,13 +730,10 @@ Value interpreter_call_function(Interpreter *interpreter, ASTNode *node) {
             func_name = strdup(node->value);
         }
     } else {
-        /* Already allocated with strdup */
     }
     
-    /* Check for builtin function first */
     BuiltinFunc builtin = get_builtin(func_name);
     if (builtin) {
-        /* Collect arguments */
         Value args[16];
         int argc = 0;
         ASTNode *arg_node = node->left;
@@ -814,13 +746,11 @@ Value interpreter_call_function(Interpreter *interpreter, ASTNode *node) {
         return result;
     }
     
-    /* Look up function */
     Value func_value = interpreter_get_variable(interpreter, func_name);
     
     if (func_value.type == VALUE_FUNCTION && func_value.as.function) {
         ASTNode *func_node = func_value.as.function;
         
-        /* Evaluate arguments BEFORE pushing new scope */
         Value args[16];
         int argc = 0;
         ASTNode *arg_node = node->left;
@@ -829,11 +759,9 @@ Value interpreter_call_function(Interpreter *interpreter, ASTNode *node) {
             arg_node = arg_node->next;
         }
         
-        /* Execute function body */
         if (func_node->children) {
             interpreter_push_scope(interpreter);
             
-            /* Bind arguments to parameters */
             ASTNode *param = func_node->left;
             int arg_idx = 0;
             while (param && arg_idx < argc) {
@@ -844,23 +772,17 @@ Value interpreter_call_function(Interpreter *interpreter, ASTNode *node) {
                 arg_idx++;
             }
             
-            /* Function body is a block - execute it */
             ASTNode *body = func_node->children;
             
-            /* Handle both BLOCK and direct statements */
             if (body->type == AST_BLOCK || body->type == AST_INNER_BLOCK) {
                 ASTNode *stmt = body->children;
                 Value result = {VALUE_NULL, {0}};
                 while (stmt) {
                     result = interpreter_eval(interpreter, stmt);
-                    /* Check for return in current scope BEFORE popping */
                     Value ret_check = interpreter_get_variable(interpreter, "__return__");
                     if (ret_check.type == VALUE_NUMBER && ret_check.as.number == 1) {
-                        /* Return was called, get the value and propagate to parent */
                         result = interpreter_get_variable(interpreter, "__return_value__");
-                        /* Pop scope first, then set return in parent */
                         interpreter_pop_scope(interpreter);
-                        /* Propagate return to parent scope */
                         interpreter_set_variable(interpreter, "__return__", ret_check);
                         interpreter_set_variable(interpreter, "__return_value__", result);
                         free(func_name);
@@ -875,13 +797,10 @@ Value interpreter_call_function(Interpreter *interpreter, ASTNode *node) {
                 fflush(stdout);
                 return result;
             } else {
-                /* Single statement body */
                 Value result = interpreter_eval(interpreter, body);
-                /* Check for return BEFORE popping */
                 Value ret_check = interpreter_get_variable(interpreter, "__return__");
                 if (ret_check.type == VALUE_NUMBER && ret_check.as.number == 1) {
                     result = interpreter_get_variable(interpreter, "__return_value__");
-                    /* Pop and propagate */
                     interpreter_pop_scope(interpreter);
                     interpreter_set_variable(interpreter, "__return__", ret_check);
                     interpreter_set_variable(interpreter, "__return_value__", result);
@@ -895,9 +814,7 @@ Value interpreter_call_function(Interpreter *interpreter, ASTNode *node) {
                 return result;
             }
         } else {
-            /* Function has no body */
             if (node->type == AST_MAIN_CALL) {
-                /* printf("Warning: main function has no body\n"); */
             }
         }
     } else {

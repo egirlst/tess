@@ -21,25 +21,21 @@
 static char* find_module_file(const char *module_name) {
     static char path[1024];
     
-    /* Try current directory */
     snprintf(path, sizeof(path), "%s%s", module_name, MODULE_EXT);
     if (access(path, F_OK) == 0) {
         return path;
     }
     
-    /* Try SAINT folder (for library modules) */
     snprintf(path, sizeof(path), "%s/%s%s", SAINT_DIR, module_name, MODULE_EXT);
     if (access(path, F_OK) == 0) {
         return path;
     }
     
-    /* Try SAINT/module_name/module_name.tess (folder structure) */
     snprintf(path, sizeof(path), "%s/%s/%s%s", SAINT_DIR, module_name, module_name, MODULE_EXT);
     if (access(path, F_OK) == 0) {
         return path;
     }
     
-    /* Try nested module path (e.g., "saint/micheal") */
     char *slash = strchr(module_name, '/');
     if (slash) {
         snprintf(path, sizeof(path), "%s/%s%s", SAINT_DIR, module_name, MODULE_EXT);
@@ -48,7 +44,6 @@ static char* find_module_file(const char *module_name) {
         }
     }
     
-    /* Try package directory */
     snprintf(path, sizeof(path), "%s/%s%s", PACKAGE_DIR, module_name, MODULE_EXT);
     if (access(path, F_OK) == 0) {
         return path;
@@ -70,7 +65,6 @@ ASTNode* module_load(const char *module_name) {
         return NULL;
     }
     
-    /* Read file */
     fseek(file, 0, SEEK_END);
     long file_size = ftell(file);
     fseek(file, 0, SEEK_SET);
@@ -80,7 +74,6 @@ ASTNode* module_load(const char *module_name) {
     source[file_size] = '\0';
     fclose(file);
     
-    /* Parse module */
     Lexer *lexer = lexer_create(source);
     lexer_tokenize(lexer);
     
@@ -106,16 +99,11 @@ void module_execute(Interpreter *interpreter, ASTNode *module_ast) {
         return;
     }
     
-    /* Push new scope for module */
     interpreter_push_scope(interpreter);
     
-    /* Execute module statements */
     ASTNode *stmt = module_ast->children;
     while (stmt) {
         interpreter_eval(interpreter, stmt);
         stmt = stmt->next;
     }
-    
-    /* Note: We don't pop scope - module variables stay in scope */
 }
-

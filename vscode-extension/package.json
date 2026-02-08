@@ -1,0 +1,25 @@
+{
+  "name": "tess-language",
+  "displayName": "Tess",
+  "description": "Language support for Tess",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "tess",
+      "aliases": ["Tess", "tess"],
+      "extensions": [".tess"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "tess",
+      "scopeName": "source.tess",
+      "path": "./syntaxes/tess.tmLanguage.json"
+    }]
+  }
+}

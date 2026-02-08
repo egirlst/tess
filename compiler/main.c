@@ -126,8 +126,6 @@ int main_tess(int argc, char *argv[]) {
     }
 }
 
-/* Alias main for ts command */
 int main(int argc, char *argv[]) {
     return main_tess(argc, argv);
 }
-

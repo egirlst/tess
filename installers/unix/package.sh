@@ -26,6 +26,6 @@ cp compiler/include/*.h "$DIST_DIR/include/"
 cp installers/unix/install.sh "$DIST_DIR/"
 
 # Create archive
-tar -czf "${DIST_NAME}.tar.gz" -C dist "${DIST_NAME}"
+tar -czf "dist/${DIST_NAME}.tar.gz" -C dist "${DIST_NAME}"
 
-echo "Package created: ${DIST_NAME}.tar.gz"
+echo "Package created: dist/${DIST_NAME}.tar.gz"

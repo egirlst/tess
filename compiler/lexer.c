@@ -19,7 +19,6 @@ Lexer* lexer_create(const char *source) {
 
 void lexer_destroy(Lexer *lexer) {
     if (lexer) {
-        /* Cast to void* to silence const warning, as we allocated it with strdup */
         free((void*)lexer->source);
         if (lexer->tokens) {
             for (size_t i = 0; i < lexer->token_count; i++) {
@@ -65,10 +64,9 @@ void lexer_skip_comment(Lexer *lexer) {
             lexer->position++;
             lexer->column++;
         }
-        return; /* Done with $$ comment, caller will loop if there are more */
+        return;
     }
     
-    /* Support # comments */
     if (lexer->position < lexer->source_len &&
         lexer->source[lexer->position] == '#') {
         lexer->position++;
@@ -87,12 +85,10 @@ void lexer_skip_comment(Lexer *lexer) {
 }
 
 Token lexer_next_token(Lexer *lexer) {
-    /* Skip whitespace and comments */
     while (lexer->position < lexer->source_len) {
         size_t old_pos = lexer->position;
         lexer_skip_whitespace(lexer);
         lexer_skip_comment(lexer);
-        /* If position didn't change, we're done skipping */
         if (lexer->position == old_pos) {
             break;
         }
@@ -107,7 +103,6 @@ Token lexer_next_token(Lexer *lexer) {
     int start_line = lexer->line;
     int start_col = lexer->column;
 
-    /* Handle Operators and Punctuation */
     Token token;
     token.line = start_line;
     token.column = start_col;
@@ -177,7 +172,6 @@ Token lexer_next_token(Lexer *lexer) {
         return token;
     }
 
-    /* Single char tokens */
     switch (c) {
         case '+': 
             token.type = TOKEN_PLUS; token.value = strdup("+"); 
@@ -213,13 +207,7 @@ Token lexer_next_token(Lexer *lexer) {
             token.type = TOKEN_RBRACKET; token.value = strdup("]"); 
             lexer->position++; lexer->column++; return token;
         case ':': 
-            /* Check for :: */
             if (lexer->position + 1 < lexer->source_len && lexer->source[lexer->position + 1] == ':') {
-                /* Just emit two colons for now, parser will handle? Or specialized token? */
-                /* Lexer.h doesn't have TOKEN_COLON_COLON. */
-                /* But keywords like print:: are handled below as identifiers if I don't split them */
-                /* Wait, print:: is handled as keyword. */
-                /* If I see ':', it's TOKEN_COLON */
                 token.type = TOKEN_COLON; token.value = strdup(":"); 
                 lexer->position++; lexer->column++; return token;
             }
@@ -236,12 +224,11 @@ Token lexer_next_token(Lexer *lexer) {
             lexer->position++; lexer->column++; return token;
     }
 
-    /* Handle strings */
     if (c == '"') {
         lexer->position++;
         lexer->column++;
         size_t str_len = 0;
-        char *str = malloc(1024); /* Allocate buffer for string */
+        char *str = malloc(1024);
         if (!str) {
             token.type = TOKEN_EOF;
             return token;
@@ -250,7 +237,6 @@ Token lexer_next_token(Lexer *lexer) {
         while (lexer->position < lexer->source_len) {
             if (lexer->source[lexer->position] == '\\' && 
                 lexer->position + 1 < lexer->source_len) {
-                /* Handle escape sequences */
                 lexer->position++;
                 char esc = lexer->source[lexer->position];
                 switch (esc) {
@@ -264,7 +250,6 @@ Token lexer_next_token(Lexer *lexer) {
                 lexer->position++;
                 lexer->column += 2;
             } else if (lexer->source[lexer->position] == '"') {
-                /* End of string */
                 lexer->position++;
                 lexer->column++;
                 break;
@@ -278,7 +263,6 @@ Token lexer_next_token(Lexer *lexer) {
                 str[str_len++] = lexer->source[lexer->position++];
             }
             
-            /* Reallocate if needed */
             if (str_len >= 1023) {
                 char *new_str = realloc(str, str_len + 1024);
                 if (!new_str) break;
@@ -292,7 +276,6 @@ Token lexer_next_token(Lexer *lexer) {
         return token;
     }
 
-    /* Handle numbers */
     if (isdigit(c)) {
         size_t start = lexer->position;
         while (lexer->position < lexer->source_len && 
@@ -310,13 +293,12 @@ Token lexer_next_token(Lexer *lexer) {
         return token;
     }
 
-    /* Handle identifiers and keywords */
     if (isalpha(c) || c == '_') {
         size_t start = lexer->position;
         while (lexer->position < lexer->source_len && 
                (isalnum(lexer->source[lexer->position]) || 
                 lexer->source[lexer->position] == '_' ||
-                lexer->source[lexer->position] == ':')) { /* Allow : in identifiers for print:: */
+                lexer->source[lexer->position] == ':')) {
             lexer->position++;
             lexer->column++;
         }
@@ -350,16 +332,13 @@ Token lexer_next_token(Lexer *lexer) {
         return token;
     }
 
-    /* Unknown char */
     lexer->position++;
     lexer->column++;
-    token.type = TOKEN_EOF; /* Treat as end for now or skip */
-    /* Or maybe create an UNKNOWN token? Lexer.h doesn't have it. */
+    token.type = TOKEN_EOF;
     return token;
 }
 
 void lexer_tokenize(Lexer *lexer) {
-    /* Reset tokens */
     lexer->token_count = 0;
     lexer->token_capacity = 16;
     lexer->tokens = malloc(sizeof(Token) * lexer->token_capacity);

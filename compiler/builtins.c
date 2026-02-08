@@ -14,7 +14,6 @@
 #include "interpreter.h"
 #include "tess_stdlib.h"
 
-/* Built-in function registry */
 typedef Value (*BuiltinFunc)(Value *args, int argc);
 
 typedef struct {
@@ -22,7 +21,6 @@ typedef struct {
     BuiltinFunc func;
 } BuiltinFunction;
 
-/* Forward declarations */
 static Value str_len(Value *args, int argc);
 static Value str_slice(Value *args, int argc);
 static Value str_replace(Value *args, int argc);
@@ -57,7 +55,6 @@ static BuiltinFunction builtins[] = {
     {NULL, NULL}
 };
 
-/* String methods */
 static Value str_len(Value *args, int argc) {
     Value result = {VALUE_NUMBER, {0}};
     if (argc < 1 || args[0].type != VALUE_STRING) {
@@ -125,7 +122,6 @@ static Value str_replace(Value *args, int argc) {
     return result;
 }
 
-/* List methods */
 static Value list_append(Value *args, int argc) {
     Value result = {VALUE_NULL, {0}};
     if (argc < 2 || args[0].type != VALUE_LIST) {
@@ -154,7 +150,6 @@ static Value list_pop(Value *args, int argc) {
     return result;
 }
 
-/* Dict methods */
 static Value dict_keys(Value *args, int argc) {
     Value result = {VALUE_LIST, {0}};
     if (argc < 1 || args[0].type != VALUE_DICT) {
@@ -203,7 +198,6 @@ static Value dict_values(Value *args, int argc) {
     return result;
 }
 
-/* Math functions */
 static Value math_abs(Value *args, int argc) {
     Value result = {VALUE_NUMBER, {0}};
     if (argc < 1 || args[0].type != VALUE_NUMBER) {
@@ -239,7 +233,6 @@ static Value math_min(Value *args, int argc) {
     return result;
 }
 
-/* Timing function - returns dictionary with timing information */
 static Value get_timing(Value *args, int argc) {
     (void)args;
     (void)argc;
@@ -252,7 +245,6 @@ static Value get_timing(Value *args, int argc) {
     dict->count = 0;
     dict->buckets = calloc(dict->bucket_count, sizeof(DictEntry*));
     
-    /* Add compile_time */
     Value compile_val = {VALUE_NUMBER, {0}};
     compile_val.as.number = g_compile_time;
     DictEntry *compile_entry = malloc(sizeof(DictEntry));
@@ -269,7 +261,6 @@ static Value get_timing(Value *args, int argc) {
     dict->buckets[bucket_idx] = compile_entry;
     dict->count++;
     
-    /* Add execute_time */
     Value execute_val = {VALUE_NUMBER, {0}};
     execute_val.as.number = g_execute_time;
     DictEntry *execute_entry = malloc(sizeof(DictEntry));
@@ -285,7 +276,6 @@ static Value get_timing(Value *args, int argc) {
     dict->buckets[bucket_idx] = execute_entry;
     dict->count++;
     
-    /* Add total_time */
     Value total_val = {VALUE_NUMBER, {0}};
     total_val.as.number = g_total_time;
     DictEntry *total_entry = malloc(sizeof(DictEntry));
@@ -305,7 +295,6 @@ static Value get_timing(Value *args, int argc) {
     return result;
 }
 
-/* Get builtin function by name */
 BuiltinFunc get_builtin(const char *name) {
     for (int i = 0; builtins[i].name; i++) {
         if (strcmp(builtins[i].name, name) == 0) {
@@ -313,68 +302,56 @@ BuiltinFunc get_builtin(const char *name) {
         }
     }
     
-    /* Check string methods */
     if (strcmp(name, "len") == 0) return (BuiltinFunc)str_len;
     if (strcmp(name, "slice") == 0) return (BuiltinFunc)str_slice;
     if (strcmp(name, "replace") == 0) return (BuiltinFunc)str_replace;
     
-    /* Check list methods */
     if (strcmp(name, "append") == 0) return (BuiltinFunc)list_append;
     if (strcmp(name, "pop") == 0) return (BuiltinFunc)list_pop;
     
-    /* Check dict methods */
     if (strcmp(name, "keys") == 0) return (BuiltinFunc)dict_keys;
     if (strcmp(name, "values") == 0) return (BuiltinFunc)dict_values;
     
-    /* Check math functions */
     if (strcmp(name, "abs") == 0) return (BuiltinFunc)math_abs;
     if (strcmp(name, "max") == 0) return (BuiltinFunc)math_max;
     if (strcmp(name, "min") == 0) return (BuiltinFunc)math_min;
     
-    /* Check timing function */
     if (strcmp(name, "timing") == 0) return (BuiltinFunc)get_timing;
     
-    /* Check file functions */
     if (strcmp(name, "open") == 0) return (BuiltinFunc)stdlib_file_open;
-    if (strcmp(name, "write") == 0) return (BuiltinFunc)stdlib_file_write; /* For direct access if needed */
+    if (strcmp(name, "write") == 0) return (BuiltinFunc)stdlib_file_write;
     if (strcmp(name, "read") == 0) return (BuiltinFunc)stdlib_file_read;
     if (strcmp(name, "close") == 0) return (BuiltinFunc)stdlib_file_close;
 
-    /* Check memory functions */
     if (strcmp(name, "alloc") == 0) return (BuiltinFunc)stdlib_mem_alloc;
     if (strcmp(name, "free") == 0) return (BuiltinFunc)stdlib_mem_free;
     if (strcmp(name, "set") == 0) return (BuiltinFunc)stdlib_mem_write;
     if (strcmp(name, "get") == 0) return (BuiltinFunc)stdlib_mem_read;
     
-    /* Check system functions */
     if (strcmp(name, "sleep") == 0) return (BuiltinFunc)stdlib_sys_sleep;
     if (strcmp(name, "exit") == 0) return (BuiltinFunc)stdlib_sys_exit;
     
-    /* Check asm functions */
     if (strcmp(name, "alloc_exec") == 0) return (BuiltinFunc)stdlib_asm_alloc_exec;
     if (strcmp(name, "exec") == 0) return (BuiltinFunc)stdlib_asm_exec;
 
     return NULL;
 }
 
-/* Register builtins in interpreter */
 void register_builtins(Interpreter *interpreter) {
     for (int i = 0; builtins[i].name; i++) {
         Value func_val = {VALUE_FUNCTION, {0}};
-        func_val.as.function = NULL; /* Mark as builtin */
+        func_val.as.function = NULL;
         interpreter_set_variable(interpreter, builtins[i].name, func_val);
     }
     
-    /* Register 'f' object for file I/O */
     Value f_obj = {VALUE_OBJECT, {0}};
     Dict *f_dict = malloc(sizeof(Dict));
     f_dict->bucket_count = 8;
     f_dict->count = 0;
     f_dict->buckets = calloc(8, sizeof(DictEntry*));
     
-    /* Add 'open' method to 'f' */
     Value open_func = {VALUE_FUNCTION, {0}};
-    open_func.as.function = NULL; /* Builtin marker */
+    open_func.as.function = NULL;
     
     DictEntry *entry = malloc(sizeof(DictEntry));
     entry->key = strdup("open");
@@ -382,7 +359,6 @@ void register_builtins(Interpreter *interpreter) {
     *entry->value = open_func;
     entry->next = NULL;
     
-    /* Hash "open" */
     unsigned long hash = 5381;
     char *k = "open";
     int c;
@@ -393,14 +369,12 @@ void register_builtins(Interpreter *interpreter) {
     f_obj.as.dict = f_dict;
     interpreter_set_variable(interpreter, "f", f_obj);
 
-    /* Register 'mem' object for memory management */
     Value mem_obj = {VALUE_OBJECT, {0}};
     Dict *mem_dict = malloc(sizeof(Dict));
     mem_dict->bucket_count = 8;
     mem_dict->count = 0;
     mem_dict->buckets = calloc(8, sizeof(DictEntry*));
 
-    /* Helper to add method */
     void add_mem_method(const char *key, Dict *target_dict) {
         Value func = {VALUE_FUNCTION, {0}};
         func.as.function = NULL;
@@ -430,7 +404,6 @@ void register_builtins(Interpreter *interpreter) {
     mem_obj.as.dict = mem_dict;
     interpreter_set_variable(interpreter, "mem", mem_obj);
     
-    /* Register 'sys' object */
     Value sys_obj = {VALUE_OBJECT, {0}};
     Dict *sys_dict = malloc(sizeof(Dict));
     sys_dict->bucket_count = 8;
@@ -443,7 +416,6 @@ void register_builtins(Interpreter *interpreter) {
     sys_obj.as.dict = sys_dict;
     interpreter_set_variable(interpreter, "sys", sys_obj);
     
-    /* Register 'asm' object */
     Value asm_obj = {VALUE_OBJECT, {0}};
     Dict *asm_dict = malloc(sizeof(Dict));
     asm_dict->bucket_count = 8;
