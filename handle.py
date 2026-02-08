@@ -1,48 +1,58 @@
 import asyncio
 import asyncpg
-import os
-import hashlib
 
 DB_URL = "postgresql://tess:tess@107.189.20.246:5662/tess"
-ARTIFACTS_DIR = "release_artifacts"
 
-def get_file_info(filename):
-    """Calculates SHA256 and size of a file in release_artifacts."""
-    filepath = os.path.join(ARTIFACTS_DIR, filename)
-    if not os.path.exists(filepath):
-        print(f"Warning: File {filename} not found locally. Using dummy values.")
-        return "0000000000000000000000000000000000000000000000000000000000000000", 0
-    
-    sha256_hash = hashlib.sha256()
-    with open(filepath, "rb") as f:
-        # Read and update hash string value in blocks of 4K
-        for byte_block in iter(lambda: f.read(4096), b""):
-            sha256_hash.update(byte_block)
-            
-    size = os.path.getsize(filepath)
-    return sha256_hash.hexdigest(), size
+# Data provided by user from GitHub Release
+INSTALLERS = [
+    {
+        "os_type": "windows",
+        "filename": "tess-v1.0.0-installer.msi",
+        "url": "https://github.com/egirlst/tess/releases/download/v1.0.0/tess-v1.0.0-installer.msi",
+        "shash": "10df2e14411b9ef1ea6058f33c434618bbac67375b31e760b732ba7bdd81b72e",
+        "size": 332 * 1024 # 332 KB
+    },
+    {
+        "os_type": "macos",
+        "filename": "tess-installer-v1.pkg",
+        "url": "https://github.com/egirlst/tess/releases/download/v1.0.0/tess-installer-v1.pkg",
+        "shash": "728ae12982ba7abf0892142d132b36d8d2177ab22adfcf41fead82c1533a051e",
+        "size": 21 # 21 Bytes
+    },
+    {
+        "os_type": "linux",
+        "filename": "tess-1.0.0.tar.gz",
+        "url": "https://github.com/egirlst/tess/releases/download/v1.0.0/tess-1.0.0.tar.gz",
+        "shash": "34e7aa6fd307f2810dfe16af67b8d2169f3cefd87dac7402695b993a0099d278",
+        "size": 3717 # 3.63 KB approx 3717 bytes
+    },
+    {
+        "os_type": "linux",
+        "filename": "tess.deb",
+        "url": "https://github.com/egirlst/tess/releases/download/v1.0.0/tess.deb",
+        "shash": "01bc7a3e79a4babd8b1ee0f070d953216010eb354d51458d7387365155317651",
+        "size": 21 # 21 Bytes
+    }
+]
 
-async def insert_installer(conn, change_id, os_type, filename, url):
-    # Calculate real hash and size
-    shash, size = get_file_info(filename)
-    
-    # Check if exists
-    row = await conn.fetchrow("SELECT id, shash FROM installers WHERE change_id = $1 AND os_type = $2", change_id, os_type)
+async def insert_installer(conn, change_id, installer):
+    # Check if exists by filename (path) to allow multiple files per OS
+    row = await conn.fetchrow("SELECT id FROM installers WHERE change_id = $1 AND path = $2", change_id, installer["filename"])
     
     if row:
-        print(f"Installer for {os_type} exists. Updating hash/size...")
+        print(f"Installer {installer['filename']} exists. Updating...")
         await conn.execute("""
             UPDATE installers 
-            SET shash = $1, size_bytes = $2, url = $3, path = $4
+            SET shash = $1, size_bytes = $2, url = $3, os_type = $4
             WHERE id = $5
-        """, shash, size, url, filename, row['id'])
-        print(f"Updated installer for {os_type}: {filename} (Size: {size}, Hash: {shash[:8]}...)")
+        """, installer["shash"], installer["size"], installer["url"], installer["os_type"], row['id'])
+        print(f"Updated {installer['filename']}")
     else:
         await conn.execute("""
             INSERT INTO installers (change_id, os_type, shash, url, path, size_bytes)
             VALUES ($1, $2, $3, $4, $5, $6)
-        """, change_id, os_type, shash, url, filename, size)
-        print(f"Inserted installer for {os_type}: {filename} (Size: {size}, Hash: {shash[:8]}...)")
+        """, change_id, installer["os_type"], installer["shash"], installer["url"], installer["filename"], installer["size"])
+        print(f"Inserted {installer['filename']}")
 
 async def main():
     print(f"Connecting to {DB_URL}...")
@@ -138,14 +148,8 @@ async def main():
             print(f"Created SubChange 1.0.0 with ID {sub_change_id}")
 
         # 5. Insert Installers
-        # Windows (MSI)
-        await insert_installer(conn, sub_change_id, "windows", "tess-v1.0.0-installer.msi", "https://github.com/sa1nt/tess/releases/download/v1.0.0/tess-v1.0.0-installer.msi")
-        
-        # macOS (PKG)
-        await insert_installer(conn, sub_change_id, "macos", "TessInstaller.pkg", "https://github.com/sa1nt/tess/releases/download/v1.0.0/TessInstaller.pkg")
-        
-        # Linux (TAR.GZ)
-        await insert_installer(conn, sub_change_id, "linux", "tess-1.0.0.tar.gz", "https://github.com/sa1nt/tess/releases/download/v1.0.0/tess-1.0.0.tar.gz")
+        for installer in INSTALLERS:
+            await insert_installer(conn, sub_change_id, installer)
 
         print("Database population complete.")
 
