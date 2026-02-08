@@ -1,4 +1,5 @@
 # Tess Programming Language
+SOLEY FOUNDED AND MADE BT THE 17y GENIUS
 
 **Tess** is a versatile programming language compiler and interpreter designed for efficiency and ease of use. It comes with a robust set of built-in tools for package management, code formatting, linting, and testing.
 
@@ -93,4 +94,4 @@ tess test
 
 ## License
 
-[Add License Information Here]
+[Add License Information Here] NEVVAA
