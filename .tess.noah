@@ -1,0 +1,14 @@
+$$ official tess manifest
+$$ Lines are key = value; comments start with $
+$$ to install tess.sh
+
+name = tess
+version = 1
+description = tess first commit
+license = MIT
+
+note::
+I made Tess mainly and solely for my own project, and later decided to make it public after testing it and comparing it with other languages such as Rust, C, Go, and several others. I ended up liking Tess more, probably because of the syntax, but also because it’s faster and can handle more for an API server with Saint than Go with Gin or C++ with Drogon.
+Tess will probably be updated regularly, but nothing fancy unless it gets a lot of downloads. As of now, the compiler is self-written in C, but it will be rewritten in Tess. The more users we have, the more open I am to contributions from everyone, and I’ll try to help anyone with any issues.
+If you need help, please read https://tess.sh/docs or ocntact me at https://egirl.st
+ for everything you need to know. Much love to anyone using it!
